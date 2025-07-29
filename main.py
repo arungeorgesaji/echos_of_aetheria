@@ -1,25 +1,17 @@
 import pygame
+import pytmx
 from settings import *
 from camera import Camera
 from player import Player
-from tilemap import load_tilemap, render_tilemap
 
 def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    
-    tileset = pygame.image.load("assets/Tileset/tileset.png").convert_alpha()
-    tiles = load_tilemap(tileset, TILE_SIZE, 8, 8)
-    
-    player = Player(5, 5)
-    camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT)
-    
-    tilemap = [
-        [0, 1, 1, 1, 0],
-        [0, 1, 2, 1, 0],
-        [0, 1, 1, 1, 0],
-        [0, 0, 0, 0, 0]
-    ]
+    pygame.display.set_caption("TMX Loader")
+
+    tmx_data = pytmx.load_pygame("assets/Tileset/grassy.tmx")  
+    player = Player(16 * tmx_data.tilewidth, 16 * tmx_data.tileheight)  
+    camera = Camera(SCREEN_WIDTH, SCREEN_HEIGHT, tmx_data)
     
     clock = pygame.time.Clock()
     running = True
@@ -29,11 +21,23 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
         
-        player.update()
+        player.update(camera)  
         camera.update(player)
         
-        screen.fill((0, 0, 0))
-        render_tilemap(screen, tilemap, tiles, (camera.offset_x, camera.offset_y))
+        screen.fill((0, 0, 0))  
+        
+        for layer in tmx_data.visible_layers:
+            if isinstance(layer, pytmx.TiledTileLayer):
+                for x, y, gid in layer:
+                    tile = tmx_data.get_tile_image_by_gid(gid)
+                    if tile:
+                        screen.blit(tile, camera.apply_rect(pygame.Rect(
+                            x * tmx_data.tilewidth,
+                            y * tmx_data.tileheight,
+                            tmx_data.tilewidth,
+                            tmx_data.tileheight
+                        )))
+        
         screen.blit(player.image, camera.apply(player))
         
         pygame.display.flip()

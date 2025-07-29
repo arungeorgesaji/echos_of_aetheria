@@ -1,21 +1,35 @@
 import pygame
-from settings import TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
+from settings import *
 
-def load_tilemap(tileset, tile_size, cols, rows):
-    tiles = []
-    for y in range(rows):
-        for x in range(cols):
-            rect = pygame.Rect(x * tile_size, y * tile_size, tile_size, tile_size)
-            tiles.append(tileset.subsurface(rect))
-    return tiles
-
-def render_tilemap(surface, tilemap, tiles, camera_offset=(0, 0)):
-    for y, row in enumerate(tilemap):
-        for x, tile_index in enumerate(row):
-            if 0 <= tile_index < len(tiles):
-                screen_x = x * TILE_SIZE - camera_offset[0]
-                screen_y = y * TILE_SIZE - camera_offset[1]
-                
-                if (-TILE_SIZE < screen_x < SCREEN_WIDTH and 
-                    -TILE_SIZE < screen_y < SCREEN_HEIGHT):
-                    surface.blit(tiles[tile_index], (screen_x, screen_y))
+class Tilemap:
+    def __init__(self, filename):
+        self.tile_size = TILE_SIZE
+        self.tiles = []
+        self.load_map(filename)
+        self.width = len(self.tiles[0]) * self.tile_size if self.tiles else 0
+        self.height = len(self.tiles) * self.tile_size if self.tiles else 0
+        
+    def load_map(self, filename):
+        try:
+            with open(filename, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        self.tiles.append(list(map(int, line.split(','))))
+        except FileNotFoundError:
+            self.tiles = [[0 for _ in range(50)] for _ in range(50)]
+            
+    def render(self, surface, camera):
+        for y, row in enumerate(self.tiles):
+            for x, tile in enumerate(row):
+                if tile != 0:  e
+                    rect = pygame.Rect(
+                        x * self.tile_size, 
+                        y * self.tile_size, 
+                        self.tile_size, 
+                        self.tile_size
+                    )
+                    if camera.rect.colliderect(rect):
+                        screen_pos = camera.apply_rect(rect)
+                        color = (100, 100, 100) if tile == 1 else (200, 200, 0)
+                        pygame.draw.rect(surface, color, screen_pos)
